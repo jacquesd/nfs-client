@@ -4,6 +4,7 @@ import com.sun.nio.file.SensitivityWatchEventModifier;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.*;
 import java.util.ArrayList;
 
@@ -34,6 +35,15 @@ public class FileWatcher implements Runnable {
             final WatchService service = FileSystems.getDefault().newWatchService();
             @SuppressWarnings("UnusedAssignment")
             WatchKey key = this.register(service, this.dir);
+            Files.walk(this.dir)
+                    .filter(Files::isDirectory)
+                    .forEach(subfolder -> {
+                        try {
+                            this.register(service, subfolder);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
 
             while (true) {
                 try {
