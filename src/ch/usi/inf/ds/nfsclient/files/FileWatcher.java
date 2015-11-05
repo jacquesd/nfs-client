@@ -1,38 +1,41 @@
 package ch.usi.inf.ds.nfsclient.files;
 
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
-
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
-
 import com.sun.nio.file.SensitivityWatchEventModifier;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.ArrayList;
+
+import static java.nio.file.StandardWatchEventKinds.*;
 
 public class FileWatcher implements Runnable {
 
-	private final Path dir;
+    private final Path dir;
+    private final ArrayList<FileWatcherListener> listeners;
 
-	public FileWatcher(String dir) {
+    public FileWatcher(final String dir) {
         this.dir = FileSystems.getDefault().getPath(dir).toAbsolutePath().normalize();
-	}
+        this.listeners = new ArrayList<>();
+    }
 
-	private WatchKey register(final WatchService service, final Path dir) throws IOException {
-		return dir.register(service, new WatchEvent.Kind[] {ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY},
+    private WatchKey register(final WatchService service, final Path dir) throws IOException {
+        return dir.register(service, new WatchEvent.Kind[]{ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY},
                 SensitivityWatchEventModifier.HIGH);
-	}
+    }
 
-	@Override
-	public void run() {
+    public void addListener(final FileWatcherListener listener) {
+        this.listeners.add(listener);
+    }
+
+    @Override
+    public void run() {
         try {
             final WatchService service = FileSystems.getDefault().newWatchService();
-            WatchKey key = register(service, this.dir);
+            @SuppressWarnings("UnusedAssignment")
+            WatchKey key = this.register(service, this.dir);
 
-            while(true) {
+            while (true) {
                 try {
                     key = service.take();
                 } catch (final InterruptedException e) {
@@ -41,25 +44,40 @@ public class FileWatcher implements Runnable {
                 }
 
                 for (final WatchEvent<?> event : key.pollEvents()) {
+
                     final WatchEvent.Kind kind = event.kind();
+                    final Path parentPath = (Path) key.watchable();
+                    final Path filePath = parentPath.resolve((Path) event.context());
+                    final File file = filePath.toAbsolutePath().normalize().toFile();
+
                     if (ENTRY_CREATE.equals(kind)) {
-                        System.out.println("Created " + event.context().toString());
+                        notifyFileCreated(file);
                     } else if (ENTRY_DELETE.equals(kind)) {
-                        System.out.println("Deleted " + event.context().toString());
+                        notifyFileDeleted(file);
                     } else if (ENTRY_MODIFY.equals(kind)) {
-                        System.out.println("Modified " + event.context().toString());
+                        notifyFileModified(file);
                     }
 
                     if (!key.reset()) {
                         break;
                     }
                 }
-
-
             }
         } catch (final IOException e) {
             e.printStackTrace();
         }
 
-	}
+    }
+
+    private void notifyFileModified(final File file) {
+        this.listeners.forEach(listener -> listener.fileModified(file));
+    }
+
+    private void notifyFileDeleted(final File file) {
+        this.listeners.forEach(listener -> listener.fileDeleted(file));
+    }
+
+    private void notifyFileCreated(final File file) {
+        this.listeners.forEach(listener -> listener.fileCreated(file));
+    }
 }
