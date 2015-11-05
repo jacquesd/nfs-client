@@ -1,4 +1,4 @@
-package ch.usi.inf.ds.client;
+package ch.usi.inf.ds.nfsclient.files;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -13,11 +13,11 @@ import java.nio.file.WatchService;
 
 import com.sun.nio.file.SensitivityWatchEventModifier;
 
-public class Watcher implements Runnable {
+public class FileWatcher implements Runnable {
 
 	private final Path dir;
 
-	public Watcher(String dir) {
+	public FileWatcher(String dir) {
         this.dir = FileSystems.getDefault().getPath(dir).toAbsolutePath().normalize();
 	}
 
