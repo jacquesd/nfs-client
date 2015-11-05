@@ -13,48 +13,53 @@ import java.nio.file.WatchService;
 
 import com.sun.nio.file.SensitivityWatchEventModifier;
 
-public class Watcher {
+public class Watcher implements Runnable {
 
-	private WatchService service;
-	private WatchKey key;
+	private final Path dir;
 
-	public Watcher() {
-
+	public Watcher(String dir) {
+        this.dir = FileSystems.getDefault().getPath(dir).toAbsolutePath().normalize();
 	}
 
-	private void register(final Path dir) {
-		try {
-			this.key = dir.register(this.service, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-		} catch (final IOException err) {
-			System.err.println(err);
-		}
+	private WatchKey register(final WatchService service, final Path dir) throws IOException {
+		return dir.register(service, new WatchEvent.Kind[] {ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY},
+                SensitivityWatchEventModifier.HIGH);
 	}
 
-	public void watch(final Path dir) throws IOException, InterruptedException {
-		this.service = FileSystems.getDefault().newWatchService();
-		dir.register(this.service,
-				new WatchEvent.Kind[] { ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY },
-				SensitivityWatchEventModifier.HIGH);
-		this.register(dir);
+	@Override
+	public void run() {
+        try {
+            final WatchService service = FileSystems.getDefault().newWatchService();
+            WatchKey key = register(service, this.dir);
 
-		boolean watching = true;
-		WatchKey key = null;
-		do {
-			key = this.service.take();
+            while(true) {
+                try {
+                    key = service.take();
+                } catch (final InterruptedException e) {
+                    e.printStackTrace();
+                    return;
+                }
 
-			for (final WatchEvent<?> event : key.pollEvents()) {
-				final WatchEvent.Kind kind = event.kind();
-				if (ENTRY_CREATE.equals(kind)) {
-					System.out.println("Created " + event.context().toString());
-				} else if (ENTRY_DELETE.equals(kind)) {
-					System.out.println("Deleted " + event.context().toString());
-				} else if (ENTRY_MODIFY.equals(kind)) {
-					System.out.println("Modified " + event.context().toString());
-				}
-				watching = key.reset();
-			}
-		} while (watching);
+                for (final WatchEvent<?> event : key.pollEvents()) {
+                    final WatchEvent.Kind kind = event.kind();
+                    if (ENTRY_CREATE.equals(kind)) {
+                        System.out.println("Created " + event.context().toString());
+                    } else if (ENTRY_DELETE.equals(kind)) {
+                        System.out.println("Deleted " + event.context().toString());
+                    } else if (ENTRY_MODIFY.equals(kind)) {
+                        System.out.println("Modified " + event.context().toString());
+                    }
+
+                    if (!key.reset()) {
+                        break;
+                    }
+                }
+
+
+            }
+        } catch (final IOException e) {
+            e.printStackTrace();
+        }
 
 	}
-
 }
