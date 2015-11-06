@@ -35,15 +35,13 @@ public class FileWatcher implements Runnable {
             final WatchService service = FileSystems.getDefault().newWatchService();
             @SuppressWarnings("UnusedAssignment")
             WatchKey key = this.register(service, this.dir);
-            Files.walk(this.dir)
-                    .filter(Files::isDirectory)
-                    .forEach(subfolder -> {
-                        try {
-                            this.register(service, subfolder);
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    });
+            FileUtil.forSubDirectory(this.dir).forEach(subDir -> {
+                try {
+                    register(service, subDir);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
 
             while (true) {
                 try {
@@ -61,11 +59,25 @@ public class FileWatcher implements Runnable {
                     final File file = filePath.toAbsolutePath().normalize().toFile();
 
                     if (ENTRY_CREATE.equals(kind)) {
-                        notifyFileCreated(file);
+                        this.notifyFileCreated(file);
+                        if (file.isDirectory()) {
+                            this.register(service, filePath);
+                            FileUtil.walk(filePath).forEach(subPath -> {
+                                File subFile = subPath.toAbsolutePath().normalize().toFile();
+                                this.notifyFileCreated(subFile);
+                                if (subFile.isDirectory()) {
+                                    try {
+                                        this.register(service, subPath);
+                                    } catch (IOException e) {
+                                        throw new UncheckedIOException(e);
+                                    }
+                                }
+                            });
+                        }
                     } else if (ENTRY_DELETE.equals(kind)) {
-                        notifyFileDeleted(file);
+                        this.notifyFileDeleted(file);
                     } else if (ENTRY_MODIFY.equals(kind)) {
-                        notifyFileModified(file);
+                        this.notifyFileModified(file);
                     }
 
                     if (!key.reset()) {
