@@ -1,0 +1,91 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Remote Tea ONC/RPC Java Library</title>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+    <meta name="author" content="Harald Albrecht">
+    <link rel="stylesheet" type="text/css" href="docstyle.css">
+  </head>
+  <body>
+
+<h1>README</h1>
+
+<p>The whole release shebang is summarized in our <a
+href="changelog.html">Change Log</a>.<p>
+
+<p>As always, the most current information about the Remote Tea Java
+Library, as well as updates, can be found on the web at the <a
+class="ext" href="http://sourceforge.net/projects/remotetea/">Remote Tea ONC/RPC
+Home Page</a>.</p>
+
+
+<h2>Licensing</h2>
+
+<p>The Remote Tea Java Library is licensed under the terms of the
+<a href="LICENSE.txt">GNU Library General Public License</a> (LGPL).</p>
+
+<p>Rationale: while the LGPL does not restrict the use of the packages
+even in commercial applications, it is ensured this way that
+modifications to the source code <em>must</em> be given back to the
+community. If you use the packages in commercial applications, you must
+either include the source code of the Remote Tea ONC/RPC Java Library
+or provide the source code to your customers on request. The details
+can be found in the <a href="LICENSE.txt">LGPL terms</a>.</p>
+
+<h2>Java compliance</h2>
+
+<p>The <q>Remote Tea</q> ONC/RPC Java package is currently being
+developed using Eclipse <em>Luna</em>, Maven 3.2.3 and Ant 1.9.2.
+The distribution files are compiled with the Java compiler shipped
+with the Oracle Java SDK version 1.8.0_25. The packages are compiled
+with the compiler options <em>source=1.5</em> and <em>target=1.5</em>
+letting the packages backwards compatible with Java 5 runtime environments.</p>
+
+<h2>Project Structure</h2>
+
+<p><q>Remote Tea</q> is organized with respect to its modules:</p>
+
+<dl>
+<dt><span class="product">oncrpc</span></dt>
+<dd>The runtime environment for ONC/RPC programs, both client and server side.</dd>
+<dt><span class="product">jrpcgen</span></dt>
+<dd>The source generator for ONC/RPC programs analogous to <em>rpcgen</em> of Sun.</dd>
+<dt><span class="product">jportmap</span></dt>
+<dd>A port mapper implementation required by ONC/RPC programs to register as service and to lookup registered services, respectively.</dd>
+<dt><span class="product">maven-plugin</span></dt>
+<dd>A Maven Plugin providing access to the source generator (<span class="product">jrpcgen</span>) in the Maven life cycle phase <em>generate-sources</em>.</dd>
+<dt><span class="product">information</span></dt>
+<dd>Project information such as the license and the change log.</dd>
+</dl>
+
+<p>The corresponding folder structure is as follows:</p>
+
+<ul>
+  <li><span><code>remotetea</code>: The Ant build file <em>build.xml</em> and the main POM file <em>pom.xml</em>.</span></li>
+  <li><span><code>remotetea/oncrpc</code>: POM and source code of the ONC/RPC runtime environment, both client and server side.</span></li>
+  <li><span><code>remotetea/jrpcgen</code>: POM and source code of the ONC/RPC x-file parser and source code generator.</span></li>
+  <li><span><code>remotetea/jportmap</code>: POM and source code of the ONC/RPC port mapper.</span></li>
+  <li><span><code>remotetea/maven-plugin</code>: POM and source code of the Maven plugin for the x-file parsing and source code generation
+  within a Maven project.</span></li>
+  <li><span><code>remotetea/information</code>: POM and information files such as the license and the change log.</span></li>
+  <li><span><code>remotetea/src</code>: Source code of the test files. In future, test files will be moved into the corresponding
+  modules.</span></li>
+</ul>
+
+<p>The target directories of the Ant build artifacts are as follows:</p>  
+
+<ul>
+  <li><span><code>remotetea/classes</code>: Compiled class files as well as built Jar-files.</span></li>
+  <li><span><code>remotetea/javadoc</code>: Remote Tea ONC/RPC API documentation.</span></li>
+  <li><span><code>remotetea/dist</code>: Distribution files of Remote Tea ONC/RPC for Sourceforge.</span></li>
+</ul>
+
+<p>The target directories of the Maven build artifacts are with respect to the modules <code>remotetea/&lt;module&gt;/target</code>.</p>  
+
+<h2>Who's to blame</h2>
+
+<p>Have a look at the <a class="ext" href="http://sourceforge.net/p/remotetea/wiki/Home/">
+Remote Tea ONC/RPC Wiki</a> to see the list of project members.</p>
+
+  </body>
+</html>
