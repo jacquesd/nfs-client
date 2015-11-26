@@ -1,7 +1,10 @@
 package ch.usi.inf.ds.nfsclient;
 
+import ch.usi.inf.ds.nfsclient.client.Client;
 import ch.usi.inf.ds.nfsclient.files.DebugFileListener;
 import ch.usi.inf.ds.nfsclient.files.FileWatcher;
+import ch.usi.inf.ds.nfsclient.jrpcgen.nfs.entry;
+import org.acplt.oncrpc.OncRpcException;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -22,5 +25,15 @@ public class Main {
         threads.add(new Thread(watcher));
 
         threads.forEach(java.lang.Thread::start);
+
+        try {
+            final Client client = new Client("127.0.0.1", "/exports/server");
+            for (entry e : client.readDir()) {
+                System.out.println(e.name.value);
+            }
+
+        } catch (OncRpcException e) {
+            e.printStackTrace();
+        }
     }
 }
