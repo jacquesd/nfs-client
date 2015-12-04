@@ -17,7 +17,7 @@ public class Main {
     public static void main(final String[] args) throws IOException {
         final ArrayList<Thread> threads = new ArrayList<>();
 
-        String dir = FileSystems.getDefault().getPath(directory).toAbsolutePath().normalize().toString();
+        final String dir = FileSystems.getDefault().getPath(directory).toAbsolutePath().normalize().toString();
 
         final FileWatcher watcher = new FileWatcher(dir);
         watcher.addListener(new DebugFileListener());
@@ -27,12 +27,12 @@ public class Main {
         threads.forEach(java.lang.Thread::start);
 
         try {
-            final Client client = new Client("127.0.0.1", "/exports/server");
-            for (entry e : client.readDir()) {
+            final Client client = new Client("127.0.0.1", "/exports/server", "/exports/mountPoint");
+            for (final entry e : client.readDir()) {
                 System.out.println(e.name.value);
             }
 
-        } catch (OncRpcException e) {
+        } catch (final OncRpcException e) {
             e.printStackTrace();
         }
     }
