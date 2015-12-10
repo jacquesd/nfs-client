@@ -1,6 +1,9 @@
 package ch.usi.inf.ds.nfsclient.client;
 
 import ch.usi.inf.ds.nfsclient.errors.DirectoryCreationException;
+import ch.usi.inf.ds.nfsclient.errors.FileCreationException;
+import ch.usi.inf.ds.nfsclient.errors.ReadException;
+import ch.usi.inf.ds.nfsclient.errors.WriteException;
 import ch.usi.inf.ds.nfsclient.jrpcgen.mount.dirpath;
 import ch.usi.inf.ds.nfsclient.jrpcgen.mount.fhstatus;
 import ch.usi.inf.ds.nfsclient.jrpcgen.mount.mountprogClient;
@@ -14,10 +17,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.nio.file.Files;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class Client {
@@ -43,6 +43,8 @@ public class Client {
         }
     }
 
+    public fhandle getRoot() { return this.root; }
+
     public List<entry> readDir() throws IOException, OncRpcException {
         return this.readDir(this.root);
     }
@@ -51,7 +53,7 @@ public class Client {
         final List<entry> entries = new ArrayList<>();
         final readdirargs args = new readdirargs();
         args.dir = dir;
-        args.count = 8192;
+        args.count = ClientUtil.MAX_BYTES;
         args.cookie = new nfscookie(new byte[]{0, 0, 0, 0});
 
         final readdirres result = this.nfs.NFSPROC_READDIR_2(args);
@@ -63,6 +65,22 @@ public class Client {
             }
         }
         return entries;
+    }
+
+    public byte[] readFile(final fhandle fileHandle, final String fileName) throws IOException, OncRpcException {
+        final readargs readargs = new readargs();
+        readargs.file = fileHandle;
+        readargs.offset = 0;
+        readargs.count = ClientUtil.MAX_BYTES;
+        readargs.totalcount = 0; // The argument "totalcount" is unused, and is removed in the next protocol revision.
+
+        final readres result = this.nfs.NFSPROC_READ_2(readargs);
+
+        if(result.status != stat.NFS_OK) {
+            throw new ReadException(fileName, result.status);
+        }
+
+        return result.read.data.value;
     }
 
     public diropres lookup(final fhandle parent, final String path) throws IOException, OncRpcException {
@@ -87,49 +105,101 @@ public class Client {
         }
     }
 
-    public void addDirectory(final File file) throws IOException, OncRpcException {
+    public void addDirectory(final File dir) throws IOException, OncRpcException {
+        final String[] path = this.getClientRelativePath(dir);
+        final fhandle parent = this.getParentDir(this.root, path, true);
+        final String dirName = path[path.length - 1];
+
+        final diropres alreadyExists = this.lookup(parent, dirName);
+
+        if (alreadyExists.status == stat.NFSERR_NOENT) {
+            this.makeDir(parent, dirName, dir);
+        }
+    }
+
+    public void addFile(final File file, final byte[] data) throws IOException, OncRpcException {
         final String[] path = this.getClientRelativePath(file);
         final fhandle parent = this.getParentDir(this.root, path, true);
+        final String fileName = path[path.length - 1];
 
-        final String folderName = path[path.length - 1];
+        final diropres alreadyExists = this.lookup(parent, fileName);
 
-        final diropres alreadyExists = this.lookup(parent, folderName);
-
-        if (alreadyExists.status == 2) {
-            final BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-            final long lastAcc = attr.lastAccessTime().toMillis();
-            final long lastMod = attr.lastModifiedTime().toMillis();
-            this.makeDir(parent, folderName, this.getTime(lastAcc), this.getTime(lastMod));
-
+        fhandle fileHandle = null;
+        if (alreadyExists.status != stat.NFSERR_NOENT) {
+            fileHandle = alreadyExists.diropok.file;
+        } else {
+            fileHandle = this.createFile(parent, fileName, file);
         }
+        this.writeToFile(fileHandle, data, fileName);
+
+    }
+
+    private fhandle makeDir(final fhandle parent, final String name, final File dir)
+            throws IOException, OncRpcException {
+        return this.makeDir(parent, name, ClientUtil.getDirSAttr(dir));
     }
 
     private fhandle makeDir(final fhandle parent, final String name, final timeval atime, final timeval mtime)
             throws IOException, OncRpcException {
+        return this.makeDir(parent, name, ClientUtil.getDirSAttr(atime, mtime));
+    }
+
+    private fhandle makeDir(final fhandle parent, final String name, final sattr attrs)
+            throws IOException, OncRpcException {
         final filename fileName = new filename(name);
-        final diropargs diropargs = new diropargs();
-        diropargs.dir = parent;
-        diropargs.name = fileName;
+        final diropargs dirOpArgs = new diropargs();
+        dirOpArgs.dir = parent;
+        dirOpArgs.name = fileName;
 
-        final sattr sattr = new sattr();
-        sattr.mode = 16895; // = '0o40777' dir, rwxrwxrwx
-        sattr.uid = 65534;  // nfsnobody
-        sattr.gid = 65534;  // nfsnobody
-        sattr.atime = atime;
-        sattr.mtime = mtime;
-        sattr.size = -1; // 0 means truncated, -1 means ignored
+        final createargs args = new createargs();
+        args.where = dirOpArgs;
+        args.attributes = attrs;
 
-        final createargs createargs = new createargs();
-        createargs.where = diropargs;
-        createargs.attributes = sattr;
+        final diropres result = this.nfs.NFSPROC_MKDIR_2(args);
 
-        final diropres result = this.nfs.NFSPROC_MKDIR_2(createargs);
-
-        if (result.status != 0) {
+        if (result.status != stat.NFS_OK) {
             throw new DirectoryCreationException(name, result.status);
         }
 
         return result.diropok.file;
+    }
+
+    private fhandle createFile(final fhandle parent, final String fileName, final File file)
+            throws IOException, OncRpcException {
+        final diropargs dirOpArgs = new diropargs();
+        dirOpArgs.dir = parent;
+        dirOpArgs.name = new filename(fileName);
+
+        final createargs args = new createargs();
+        args.attributes = ClientUtil.getFileSAttr(file);
+        args.where = dirOpArgs;
+
+        final diropres result = this.nfs.NFSPROC_CREATE_2(args);
+        if (result.status != stat.NFS_OK) {
+            throw new FileCreationException(fileName, result.status);
+        }
+        return result.diropok.file;
+    }
+
+    private void writeToFile(fhandle fileHandle, final byte[] data, final String fileName)
+            throws IOException, OncRpcException {
+        final nfsdata nfsData =new nfsdata();
+        nfsData.value = data;
+
+        final writeargs args=new writeargs();
+
+        args.file = fileHandle;
+        args.data = nfsData;
+        args.offset = 0;
+
+        args.beginoffset = 0; // The arguments "beginoffset" and "totalcount" are ignored
+        args.totalcount = 0;  // and are removed in the next protocol revision.
+
+        final attrstat result = this.nfs.NFSPROC_WRITE_2(args);
+
+        if(result.status != stat.NFS_OK) {
+            throw new WriteException(fileName, result.status);
+        }
     }
 
     private fhandle getParentDir(final fhandle from, final String[] path, final boolean createPath) throws IOException, OncRpcException {
@@ -141,10 +211,11 @@ public class Client {
             if (pathNode.length() <= 0) { continue; }
 
             final diropres res = this.lookup(parent, pathNode);
-            if (res.status == 0) {
+            if (res.status == stat.NFS_OK) {
                 parent = res.diropok.file;
-            } else if (res.status == 2 && createPath) { // Dir does not exist
-                parent = this.makeDir(parent, pathNode, this.now(), this.now());
+            } else if (res.status == stat.NFSERR_NOENT && createPath) { // Dir does not exist
+                final timeval now = ClientUtil.now();
+                parent = this.makeDir(parent, pathNode, now, now);
             } else if (createPath) {
                 throw new DirectoryCreationException(pathNode, res.status);
             } else {
@@ -156,16 +227,5 @@ public class Client {
 
     private String[] getClientRelativePath(final File file) {
         return file.getAbsolutePath().replaceAll(this.mountPoint, "").split(File.separator);
-    }
-
-    private timeval getTime(final long millis) {
-        final timeval t = new timeval();
-        t.seconds = (int) (millis / 1000.0);
-        t.useconds = 0;
-        return t;
-    }
-
-    private timeval now() {
-        return getTime(new Date().getTime());
     }
 }
