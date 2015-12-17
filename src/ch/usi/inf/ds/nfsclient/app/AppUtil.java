@@ -9,8 +9,8 @@ public final class AppUtil {
 
     private AppUtil() {}
 
-    public static boolean isReadable(int mode) { return (mode & READ) != 0; }
-    public static boolean isWritable(int mode) { return (mode & WRITE) != 0; }
-    public static boolean isExecutable(int mode) { return (mode & EXEC) != 0; }
-    public static boolean isDir(int mode) { return (mode & DIR_TYPE) != 0; }
+    public static boolean isReadable(final int mode) { return (mode & READ) != 0; }
+    public static boolean isWritable(final int mode) { return (mode & WRITE) != 0; }
+    public static boolean isExecutable(final int mode) { return (mode & EXEC) != 0; }
+    public static boolean isDir(final int mode) { return (mode & DIR_TYPE) != 0; }
 }

@@ -32,7 +32,7 @@ public class BaseApp implements Runnable {
         try {
             String line;
             while(true) {
-                this.render_prompt();
+                this.renderPrompt();
                 line = reader.readLine();
                 if (line == null) { break; } // ^ + D
                 line = line.trim();
@@ -70,7 +70,6 @@ public class BaseApp implements Runnable {
             return;
         }
         final String path = args[1];
-        final String filename = Paths.get(path).getFileName().toString();
         final diropres res = this.nfs.lookup(this.working_dir, path);
         if (res.status != stat.NFS_OK) {
             System.err.println("restore: no such file or directory: " + path);
@@ -99,12 +98,10 @@ public class BaseApp implements Runnable {
                 out.write(fileData);
                 out.close();
             }
-
-
         }
     }
 
-    private void render_prompt() {
+    private void renderPrompt() {
         System.out.print(String.join(" ", ">", this.nfs.getHost() + ":" + this.path, "$ "));
     }
 

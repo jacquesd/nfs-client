@@ -56,11 +56,7 @@ public class BaseClient {
 
     public String getPath() { return this.path; }
 
-    public List<entry> readDir() throws IOException, OncRpcException {
-        return this.readDir(this.root);
-    }
-
-    public List<entry> readDir(fhandle dir) throws IOException, OncRpcException {
+    public List<entry> readDir(final fhandle dir) throws IOException, OncRpcException {
         final List<entry> entries = new ArrayList<>();
         final readdirargs args = new readdirargs();
         args.dir = dir;
@@ -139,12 +135,9 @@ public class BaseClient {
 
         final diropres alreadyExists = this.lookup(parent, fileName);
 
-        fhandle fileHandle = null;
-        if (alreadyExists.status != stat.NFSERR_NOENT) {
-            fileHandle = alreadyExists.diropok.file;
-        } else {
-            fileHandle = this.createFile(parent, fileName, file);
-        }
+        final fhandle fileHandle = alreadyExists.status != stat.NFSERR_NOENT
+                ? alreadyExists.diropok.file
+                : this.createFile(parent, fileName, file);
         this.writeToFile(fileHandle, data, fileName);
 
     }
@@ -190,14 +183,15 @@ public class BaseClient {
         args.attributes = ClientUtil.getFileSAttr(file);
         args.where = dirOpArgs;
 
-        final diropres result = this.nfs.NFSPROC_CREATE_2(args);
+        final diropres result;
+        synchronized (this) { result = this.nfs.NFSPROC_CREATE_2(args); }
         if (result.status != stat.NFS_OK) {
             throw new FileCreationException(fileName, result.status);
         }
         return result.diropok.file;
     }
 
-    private void writeToFile(fhandle fileHandle, final byte[] data, final String fileName)
+    private void writeToFile(final fhandle fileHandle, final byte[] data, final String fileName)
             throws IOException, OncRpcException {
         final nfsdata nfsData =new nfsdata();
         nfsData.value = data;

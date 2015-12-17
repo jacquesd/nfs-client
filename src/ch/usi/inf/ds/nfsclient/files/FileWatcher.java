@@ -37,8 +37,8 @@ public class FileWatcher implements Runnable {
             WatchKey key = this.register(service, this.dir);
             FileUtil.forSubDirectory(this.dir).forEach(subDir -> {
                 try {
-                    register(service, subDir);
-                } catch (IOException e) {
+                    this.register(service, subDir);
+                } catch (final IOException e) {
                     throw new UncheckedIOException(e);
                 }
             });
@@ -63,12 +63,12 @@ public class FileWatcher implements Runnable {
                         if (file.isDirectory()) {
                             this.register(service, filePath);
                             FileUtil.walk(filePath).forEach(subPath -> {
-                                File subFile = subPath.toAbsolutePath().normalize().toFile();
+                                final File subFile = subPath.toAbsolutePath().normalize().toFile();
                                 this.notifyFileCreated(subFile);
                                 if (subFile.isDirectory()) {
                                     try {
                                         this.register(service, subPath);
-                                    } catch (IOException e) {
+                                    } catch (final IOException e) {
                                         throw new UncheckedIOException(e);
                                     }
                                 }

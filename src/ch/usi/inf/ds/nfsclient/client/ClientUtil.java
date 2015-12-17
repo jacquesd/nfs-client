@@ -30,10 +30,6 @@ public final class ClientUtil {
         return ClientUtil.setFileSAttr(ClientUtil.getSAttr(file));
     }
 
-    public static sattr getFileSAttr(final timeval atime, final timeval mtime) {
-        return ClientUtil.setFileSAttr(ClientUtil.getSAttr(atime, mtime));
-    }
-
     public static sattr getDirSAttr(final File file) throws IOException {
         return ClientUtil.setDirSAttr(ClientUtil.getSAttr(file));
     }
