@@ -59,7 +59,7 @@ public class BaseApp implements Runnable {
     private void restore(final String line) throws IOException, OncRpcException {
         final String[] args = line.split(" ");
         if(args.length != 2) {
-            System.out.println("Usage restore: restore <filename>");
+            System.err.println("Usage restore: restore <filename>");
             return;
         }
 
@@ -74,11 +74,9 @@ public class BaseApp implements Runnable {
             System.err.println("restore: no such file or directory: " + path);
             return;
         }
-        final String target = Paths.get(this.nfs.getMountPoint(), path.replaceFirst(this.nfs.getPath(), "")).toString();
+        final String target = this.getTargetPath(path);
         if (AppUtil.isDir(res.diropok.attributes.mode)) {
             final File dir = new File(target);
-            System.out.println(path);
-            System.out.println(dir);
             if (! dir.mkdir()) {
                 System.err.println("restore: Failed to create directory: " + target);
                 return;
@@ -223,5 +221,10 @@ public class BaseApp implements Runnable {
             System.err.println("failed to read " + filename);
             return null;
         }
+    }
+
+    private String getTargetPath(final String path) {
+        return Paths.get(this.path, path.replaceFirst(this.nfs.getPath(), "")).toAbsolutePath().toString();
+
     }
 }
