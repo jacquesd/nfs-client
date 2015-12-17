@@ -15,6 +15,11 @@ import java.util.Properties;
 public class Main {
 
     public static void main(final String[] args) throws IOException {
+        if (args.length != 1) {
+            System.err.println("usage: [...].Main <config.properties>");
+            System.exit(1);
+            return;
+        }
         Properties prop = new Properties();
         InputStream input = null;
 
