@@ -43,11 +43,11 @@ public class BaseApp implements Runnable {
                     System.out.println(this.path);
                 } else if (line.startsWith("cat")) {
                     this.cat(line);
-                } else if (line.startsWith("app")) {
+                } else if (line.startsWith("restore")) {
                     this.restore(line);
                 } else if (!line.equals("")) {
                     System.out.println(String.join("", "Invalid command: ", line,
-                            "\nAvailable commands are:", "\n - ls\n - pwd\n - cd\n - cat\n - app"));
+                            "\nAvailable commands are:", "\n - ls\n - pwd\n - cd\n - cat\n - restore"));
                 }
             }
 
@@ -59,11 +59,11 @@ public class BaseApp implements Runnable {
     private void restore(final String line) throws IOException, OncRpcException {
         final String[] args = line.split(" ");
         if(args.length != 2) {
-            System.out.println("Usage app: app <filename>");
+            System.out.println("Usage restore: restore <filename>");
             return;
         }
 
-        if (! "app".equals(args[0])) {
+        if (! "restore".equals(args[0])) {
             System.err.println("command not found: " + args[0]);
             return;
         }
@@ -71,7 +71,7 @@ public class BaseApp implements Runnable {
         final String filename = Paths.get(path).getFileName().toString();
         final diropres res = this.nfs.lookup(this.working_dir, path);
         if (res.status != stat.NFS_OK) {
-            System.err.println("app: no such file or directory: " + path);
+            System.err.println("restore: no such file or directory: " + path);
             return;
         }
         final String target = Paths.get(this.nfs.getMountPoint(), path.replaceFirst(this.nfs.getPath(), "")).toString();
@@ -80,21 +80,21 @@ public class BaseApp implements Runnable {
             System.out.println(path);
             System.out.println(dir);
             if (! dir.mkdir()) {
-                System.err.println("app: Failed to create directory: " + target);
+                System.err.println("restore: Failed to create directory: " + target);
                 return;
             }
 
             for (final entry e : this.nfs.readDir(res.diropok.file)) {
                 final diropres res_dir = this.nfs.lookup(res.diropok.file, e.name.value);
                 if (res_dir.status != stat.NFS_OK) {
-                    System.err.println("app: failed to app" + target);
+                    System.err.println("restore: failed to restore" + target);
                     return;
                 }
-                this.restore("app " + Paths.get(path, e.name.value));
+                this.restore("restore " + Paths.get(path, e.name.value));
             }
         } else {
             final FileOutputStream out = new FileOutputStream(target);
-            final byte[] fileData = this.readFile(this.working_dir, path, "app");
+            final byte[] fileData = this.readFile(this.working_dir, path, "restore");
             if (fileData != null) {
                 out.write(fileData);
                 out.close();
