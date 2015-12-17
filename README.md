@@ -1,6 +1,10 @@
 # nfs-client
 NFS client written in Java for a distributed systems course.
 
+## Authors
+- Samantha Rosso
+- Jacques Dafflon
+
 ## Running the NFS client
 
 1. Compile the code as follow:
