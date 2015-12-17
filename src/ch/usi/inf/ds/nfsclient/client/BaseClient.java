@@ -67,7 +67,8 @@ public class BaseClient {
         args.count = ClientUtil.MAX_BYTES;
         args.cookie = new nfscookie(new byte[]{0, 0, 0, 0});
 
-        final readdirres result = this.nfs.NFSPROC_READDIR_2(args);
+        final readdirres result;
+        synchronized (this) { result = this.nfs.NFSPROC_READDIR_2(args); }
         if (result.status == stat.NFS_OK) {
             entry entry = result.readdirok.entries;
             while (entry != null) {
@@ -87,7 +88,8 @@ public class BaseClient {
         readargs.count = ClientUtil.MAX_BYTES;
         readargs.totalcount = 0; // The argument "totalcount" is unused, and is removed in the next protocol revision.
 
-        final readres result = this.nfs.NFSPROC_READ_2(readargs);
+        final readres result;
+        synchronized (this) { result = this.nfs.NFSPROC_READ_2(readargs); }
 
         if(result.status != stat.NFS_OK) {
             throw new ReadException(fileName, result.status);
@@ -109,7 +111,7 @@ public class BaseClient {
             diropargs.dir = parentNode;
             diropargs.name = fileName;
 
-            return this.nfs.NFSPROC_LOOKUP_2(diropargs);
+            synchronized (this) { return this.nfs.NFSPROC_LOOKUP_2(diropargs); }
 
         } catch (final FileNotFoundException e) {
             final diropres res = new diropres();
@@ -168,7 +170,8 @@ public class BaseClient {
         args.where = dirOpArgs;
         args.attributes = attrs;
 
-        final diropres result = this.nfs.NFSPROC_MKDIR_2(args);
+        final diropres result;
+        synchronized (this) { result = this.nfs.NFSPROC_MKDIR_2(args); }
 
         if (result.status != stat.NFS_OK) {
             throw new DirectoryCreationException(name, result.status);
@@ -208,7 +211,8 @@ public class BaseClient {
         args.beginoffset = 0; // The arguments "beginoffset" and "totalcount" are ignored
         args.totalcount = 0;  // and are removed in the next protocol revision.
 
-        final attrstat result = this.nfs.NFSPROC_WRITE_2(args);
+        final attrstat result;
+        synchronized (this) { result = this.nfs.NFSPROC_WRITE_2(args); }
 
         if(result.status != stat.NFS_OK) {
             throw new WriteException(fileName, result.status);
