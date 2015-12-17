@@ -13,6 +13,7 @@ import java.util.Date;
 
 public class BaseApp implements Runnable {
     private final BaseClient nfs;
+    private final String mountPoint;
     private fhandle working_dir;
     private String path;
 
@@ -21,6 +22,7 @@ public class BaseApp implements Runnable {
         this.nfs = client;
         this.working_dir = this.nfs.getRoot();
         this.path = this.nfs.getPath();
+        this.mountPoint = this.nfs.getMountPoint();
     }
 
 
@@ -224,7 +226,8 @@ public class BaseApp implements Runnable {
     }
 
     private String getTargetPath(final String path) {
-        return Paths.get(this.path, path.replaceFirst(this.nfs.getPath(), "")).toAbsolutePath().toString();
+        return Paths.get(this.path.replaceFirst(this.nfs.getPath(), this.mountPoint), path)
+                .normalize().toAbsolutePath().toString();
 
     }
 }
