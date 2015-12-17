@@ -7,6 +7,8 @@ NFS client written in Java for a distributed systems course.
 
 ## Running the NFS client
 
+The program requires Java 8. The other libraries are provided.
+
 1. Compile the code as follow:
 ```bash
 mkdir bin
