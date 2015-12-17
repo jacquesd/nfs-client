@@ -1,7 +1,7 @@
 package ch.usi.inf.ds.nfsclient.app;
 
 
-import ch.usi.inf.ds.nfsclient.client.BaseClient;
+import ch.usi.inf.ds.nfsclient.client.Client;
 import ch.usi.inf.ds.nfsclient.jrpcgen.nfs.*;
 import org.acplt.oncrpc.OncRpcException;
 
@@ -12,13 +12,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class BaseApp implements Runnable {
-    private final BaseClient nfs;
+    private final Client nfs;
     private final String mountPoint;
     private fhandle working_dir;
     private String path;
 
 
-    public BaseApp(final BaseClient client) throws IOException, OncRpcException {
+    public BaseApp(final Client client) throws IOException, OncRpcException {
         this.nfs = client;
         this.working_dir = this.nfs.getRoot();
         this.path = this.nfs.getPath();

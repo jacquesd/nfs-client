@@ -2,6 +2,7 @@ package ch.usi.inf.ds.nfsclient;
 
 import ch.usi.inf.ds.nfsclient.app.BaseApp;
 import ch.usi.inf.ds.nfsclient.client.BaseClient;
+import ch.usi.inf.ds.nfsclient.client.Client;
 import ch.usi.inf.ds.nfsclient.client.EncryptedClient;
 import ch.usi.inf.ds.nfsclient.client.NFSFileListener;
 import ch.usi.inf.ds.nfsclient.files.DebugFileListener;
@@ -44,7 +45,7 @@ public class Main {
         final FileWatcher watcher = new FileWatcher(dir);
         final BaseApp app;
         try {
-            final BaseClient client = encrypted ? new EncryptedClient(host, path, dir, keyFile) : new BaseClient(host, path, dir);
+            final Client client = encrypted ? new EncryptedClient(host, path, dir, keyFile) : new BaseClient(host, path, dir);
             watcher.addListener(new DebugFileListener());
             watcher.addListener(new NFSFileListener(client));
             app = new BaseApp(client);

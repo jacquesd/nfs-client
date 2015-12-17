@@ -20,7 +20,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BaseClient {
+public class BaseClient implements Client {
     private final fhandle root;
     private final nfsClient nfs;
     private final String mountPoint;
@@ -48,14 +48,19 @@ public class BaseClient {
         }
     }
 
+    @Override
     public fhandle getRoot() { return this.root; }
 
+    @Override
     public String getMountPoint() { return this.mountPoint; }
 
+    @Override
     public String getHost() { return this.host; }
 
+    @Override
     public String getPath() { return this.path; }
 
+    @Override
     public List<entry> readDir(final fhandle dir) throws IOException, OncRpcException {
         final List<entry> entries = new ArrayList<>();
         final readdirargs args = new readdirargs();
@@ -77,6 +82,7 @@ public class BaseClient {
         return entries;
     }
 
+    @Override
     public byte[] readFile(final fhandle fileHandle, final String fileName) throws IOException, OncRpcException {
         final readargs readargs = new readargs();
         readargs.file = fileHandle;
@@ -94,6 +100,7 @@ public class BaseClient {
         return result.read.data.value;
     }
 
+    @Override
     public diropres lookup(final fhandle parent, final String path) throws IOException, OncRpcException {
         final String[] split = path.split(File.separator);
 
@@ -116,6 +123,7 @@ public class BaseClient {
         }
     }
 
+    @Override
     public void addDirectory(final File dir) throws IOException, OncRpcException {
         final String[] path = this.getClientRelativePath(dir);
         final fhandle parent = this.getParentDir(this.root, path, true);
@@ -128,6 +136,7 @@ public class BaseClient {
         }
     }
 
+    @Override
     public void addFile(final File file, final byte[] data) throws IOException, OncRpcException {
         final String[] path = this.getClientRelativePath(file);
         final fhandle parent = this.getParentDir(this.root, path, true);
