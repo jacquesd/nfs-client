@@ -24,15 +24,20 @@ public class BaseClient {
     private final fhandle root;
     private final nfsClient nfs;
     private final String mountPoint;
+    private final String path;
+    private final String host;
 
     public BaseClient(final String host, final String remotePath, final String mountPoint)
             throws OncRpcException, IOException {
+        this.host = host;
+        this.path = remotePath;
         this.mountPoint = mountPoint;
-        final mountprogClient mountProg = new mountprogClient(InetAddress.getByName(host), OncRpcProtocols.ONCRPC_UDP);
-        final OncRpcClientAuth auth = new OncRpcClientAuthUnix("barfleur", 501, 20);
+        final mountprogClient mountProg = new mountprogClient(InetAddress.getByName(this.host),
+                OncRpcProtocols.ONCRPC_UDP);
+        final OncRpcClientAuth auth = new OncRpcClientAuthUnix("nfsclient", 501, 20);
         mountProg.getClient().setAuth(auth);
 
-        final fhstatus mountOp = mountProg.MOUNTPROC_MNT_1(new dirpath(remotePath));
+        final fhstatus mountOp = mountProg.MOUNTPROC_MNT_1(new dirpath(this.path));
         if (mountOp.status == 0) {
             this.root = new fhandle(mountOp.directory.value);
             this.nfs = new nfsClient(InetAddress.getByName(host), OncRpcProtocols.ONCRPC_UDP);
@@ -44,6 +49,12 @@ public class BaseClient {
     }
 
     public fhandle getRoot() { return this.root; }
+
+    public String getMountPoint() { return this.mountPoint; }
+
+    public String getHost() { return this.host; }
+
+    public String getPath() { return this.path; }
 
     public List<entry> readDir() throws IOException, OncRpcException {
         return this.readDir(this.root);
@@ -60,7 +71,9 @@ public class BaseClient {
         if (result.status == stat.NFS_OK) {
             entry entry = result.readdirok.entries;
             while (entry != null) {
-                entries.add(entry);
+                if (!"..".equals(entry.name.value) && !".".equals(entry.name.value)) {
+                    entries.add(entry);
+                }
                 entry = entry.nextentry;
             }
         }
@@ -226,6 +239,6 @@ public class BaseClient {
     }
 
     private String[] getClientRelativePath(final File file) {
-        return file.getAbsolutePath().replaceAll(this.mountPoint, "").split(File.separator);
+        return file.getAbsolutePath().replaceFirst(this.mountPoint, "").split(File.separator);
     }
 }
