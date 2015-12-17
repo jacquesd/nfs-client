@@ -38,14 +38,17 @@ public class BaseClient implements Client {
         mountProg.getClient().setAuth(auth);
 
         final fhstatus mountOp = mountProg.MOUNTPROC_MNT_1(new dirpath(this.path));
-        if (mountOp.status == 0) {
-            this.root = new fhandle(mountOp.directory.value);
-            this.nfs = new nfsClient(InetAddress.getByName(host), OncRpcProtocols.ONCRPC_UDP);
-            this.nfs.getClient().setAuth(auth);
-        } else {
+        if (mountOp.status != stat.NFS_OK) {
+            System.err.println("Failed to mount: " + this.path);
+            System.exit(1);
             this.root = null;
             this.nfs = null;
+            return;
         }
+
+        this.root = new fhandle(mountOp.directory.value);
+        this.nfs = new nfsClient(InetAddress.getByName(host), OncRpcProtocols.ONCRPC_UDP);
+        this.nfs.getClient().setAuth(auth);
     }
 
     @Override
@@ -101,7 +104,7 @@ public class BaseClient implements Client {
     }
 
     @Override
-    public diropres lookup(final fhandle parent, final String path) throws IOException, OncRpcException {
+    public synchronized diropres lookup(final fhandle parent, final String path) throws IOException, OncRpcException {
         final String[] split = path.split(File.separator);
 
         try {
@@ -113,8 +116,7 @@ public class BaseClient implements Client {
             final diropargs diropargs = new diropargs();
             diropargs.dir = parentNode;
             diropargs.name = fileName;
-
-            synchronized (this) { return this.nfs.NFSPROC_LOOKUP_2(diropargs); }
+            return this.nfs.NFSPROC_LOOKUP_2(diropargs);
 
         } catch (final FileNotFoundException e) {
             final diropres res = new diropres();

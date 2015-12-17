@@ -74,7 +74,8 @@ public class EncryptedClient extends BaseClient {
         try {
             key = Files.readAllBytes(Paths.get(keyFile));
         } catch (final IOException e) {
-            System.err.println("Key file: " + keyFile + " not found");
+            e.printStackTrace();
+            System.err.println("Key file: " + keyFile + " not found" + System.getProperty("user.dir"));
             System.exit(1);
             return;
         }
