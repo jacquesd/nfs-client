@@ -1,6 +1,6 @@
 package ch.usi.inf.ds.nfsclient;
 
-import ch.usi.inf.ds.nfsclient.client.Client;
+import ch.usi.inf.ds.nfsclient.client.BaseClient;
 import ch.usi.inf.ds.nfsclient.client.NFSFileListener;
 import ch.usi.inf.ds.nfsclient.files.DebugFileListener;
 import ch.usi.inf.ds.nfsclient.files.FileWatcher;
@@ -21,7 +21,7 @@ public class Main {
 
         final FileWatcher watcher = new FileWatcher(dir);
         try {
-            final Client client = new Client("127.0.0.1", "/exports/server", dir);
+            final BaseClient client = new BaseClient("127.0.0.1", "/exports/server", dir);
             watcher.addListener(new DebugFileListener());
             watcher.addListener(new NFSFileListener(client));
         } catch (final OncRpcException e) {

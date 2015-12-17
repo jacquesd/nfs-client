@@ -8,9 +8,9 @@ import java.io.FileInputStream;
 
 public class NFSFileListener implements FileWatcherListener {
 
-    private final Client client;
+    private final BaseClient client;
 
-    public NFSFileListener(final Client client) {
+    public NFSFileListener(final BaseClient client) {
         this.client = client;
     }
 

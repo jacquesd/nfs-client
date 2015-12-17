@@ -20,12 +20,12 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Client {
+public class BaseClient {
     private final fhandle root;
     private final nfsClient nfs;
     private final String mountPoint;
 
-    public Client(final String host, final String remotePath, final String mountPoint)
+    public BaseClient(final String host, final String remotePath, final String mountPoint)
             throws OncRpcException, IOException {
         this.mountPoint = mountPoint;
         final mountprogClient mountProg = new mountprogClient(InetAddress.getByName(host), OncRpcProtocols.ONCRPC_UDP);
